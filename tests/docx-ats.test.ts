@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import mammoth from "mammoth";
 import { Packer } from "docx";
+import JSZip from "jszip";
 import { resumeToDocxDocument } from "@/lib/generate/docx";
 import { sampleResume } from "./fixtures/sample-resume";
 import { TEMPLATE_IDS, SECTION_HEADINGS } from "@/lib/schema";
@@ -34,4 +35,16 @@ describe("resumeToDocx ATS golden", () => {
       expect(text).toContain("Senior Software Engineer");
     });
   }
+
+  it("OOXML has no tables, headers, or footers", async () => {
+    const doc = resumeToDocxDocument(sampleResume);
+    const buffer = await Packer.toBuffer(doc);
+    const zip = await JSZip.loadAsync(buffer);
+    const documentXml = await zip.file("word/document.xml")!.async("string");
+    expect(documentXml.includes("w:tbl")).toBe(false);
+    expect(documentXml.includes("w:hdr")).toBe(false);
+    expect(documentXml.includes("w:ftr")).toBe(false);
+    expect(zip.file("word/header1.xml")).toBeNull();
+    expect(zip.file("word/footer1.xml")).toBeNull();
+  });
 });

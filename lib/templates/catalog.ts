@@ -91,7 +91,7 @@ export const TEMPLATES: Record<TemplateId, Template> = {
     name: "Two-Tone",
     description: "Accent headings + dates",
     font: { heading: "Calibri", body: "Calibri" },
-    nameStyle: { size: 20, align: "left", accent: true },
+    nameStyle: { size: 20, align: "left", accent: false },
     headingStyle: "rule-below",
     divider: "thin",
     accentUse: "headings+dates",

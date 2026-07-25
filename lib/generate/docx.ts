@@ -93,6 +93,33 @@ function headingBorder(
   return undefined;
 }
 
+function dividerParagraph(
+  template: Template,
+  accentHex: string,
+  spacing: { sectionAfter: number; paraAfter: number }
+): Paragraph | undefined {
+  if (template.divider === "none") return undefined;
+
+  const accentForHeadings = accentColor(template, accentHex, "heading");
+  const color = accentForHeadings ?? "000000";
+  const borderStyle =
+    template.divider === "dotted" ? BorderStyle.DOTTED : BorderStyle.SINGLE;
+  const size = template.divider === "thick" ? 18 : 6;
+
+  return new Paragraph({
+    spacing: { after: spacing.sectionAfter },
+    border: {
+      bottom: {
+        style: borderStyle,
+        size,
+        color,
+        space: 1,
+      },
+    },
+    children: [],
+  });
+}
+
 function sectionHeading(
   text: string,
   template: Template,
@@ -182,7 +209,7 @@ export function resumeToDocxDocument(resume: Resume): Document {
           bold: true,
           font: template.font.heading,
           size: ptToHalfPoints(template.nameStyle.size),
-          color: nameAccent ?? (template.nameStyle.accent ? hexToDocxColor(resume.meta.accentHex) : undefined),
+          color: nameAccent,
           characterSpacing: template.nameStyle.tracking
             ? template.nameStyle.tracking * 20
             : undefined,
@@ -213,11 +240,17 @@ export function resumeToDocxDocument(resume: Resume): Document {
           template.nameStyle.align === "center"
             ? AlignmentType.CENTER
             : AlignmentType.LEFT,
-        spacing: { after: spacing.sectionAfter },
+        spacing: {
+          after:
+            template.divider === "none" ? spacing.sectionAfter : spacing.paraAfter,
+        },
         children: [bodyRun(contact, template, { size: 9 })],
       })
     );
   }
+
+  const divider = dividerParagraph(template, resume.meta.accentHex, spacing);
+  if (divider) children.push(divider);
 
   if (resume.summary.trim()) {
     children.push(
