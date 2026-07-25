@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ACCENT_PALETTE } from "@/lib/accents";
 import { resumeToDocx } from "@/lib/generate/docx";
 import { downloadBlob } from "@/lib/generate/download";
@@ -22,10 +22,23 @@ export function Toolbar() {
   const { resume, dispatch, reset, exportJson, importJson } = useResume();
   const fileRef = useRef<HTMLInputElement>(null);
   const templates = listTemplates();
+  const [downloading, setDownloading] = useState(false);
+  const [docxError, setDocxError] = useState<string | null>(null);
 
   async function handleDocx() {
-    const blob = await resumeToDocx(resume);
-    downloadBlob(blob, `${slug(resume.contact.fullName || "resume")}.docx`);
+    if (downloading) return;
+    setDownloading(true);
+    setDocxError(null);
+    try {
+      const blob = await resumeToDocx(resume);
+      downloadBlob(blob, `${slug(resume.contact.fullName || "resume")}.docx`);
+    } catch {
+      const msg = "Failed to generate DOCX. Please try again.";
+      setDocxError(msg);
+      window.alert(msg);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   function handlePrint() {
@@ -136,10 +149,17 @@ export function Toolbar() {
         <button
           type="button"
           onClick={handleDocx}
-          className="rounded-md bg-cyan-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-cyan-500"
+          disabled={downloading}
+          aria-busy={downloading}
+          className="rounded-md bg-cyan-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Download DOCX
+          {downloading ? "Downloading…" : "Download DOCX"}
         </button>
+        {docxError ? (
+          <span className="text-xs text-red-300" role="alert">
+            {docxError}
+          </span>
+        ) : null}
         <button
           type="button"
           onClick={handlePrint}

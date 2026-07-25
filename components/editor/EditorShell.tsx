@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import type { PersonaId } from "@/lib/schema";
 import { useResume } from "@/lib/store";
@@ -31,6 +32,7 @@ function resolvePersona(): PersonaId | null {
 
 export function EditorShell() {
   const { loadPersona } = useResume();
+  const router = useRouter();
 
   useEffect(() => {
     const id = resolvePersona();
@@ -43,9 +45,11 @@ export function EditorShell() {
       } catch {
         // ignore
       }
+      // One-shot: strip ?persona= so refresh does not re-apply and wipe edits.
+      router.replace("/editor");
     }, 0);
     return () => window.clearTimeout(t);
-  }, [loadPersona]);
+  }, [loadPersona, router]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
