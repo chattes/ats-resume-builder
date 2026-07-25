@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { atsCheck } from "@/lib/generate/atsCheck";
 import { useResume } from "@/lib/store";
 
@@ -7,20 +8,20 @@ export function AtsBadge() {
   const { resume } = useResume();
   const result = atsCheck(resume);
   const failed = result.checks.filter((c) => !c.pass);
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative group">
-      <span
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="ats-check-details"
         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
           result.ok
             ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40"
             : "bg-red-500/15 text-red-300 ring-1 ring-red-500/40"
         }`}
-        title={
-          result.ok
-            ? "All ATS checks passed"
-            : failed.map((c) => c.label).join(", ")
-        }
       >
         <span
           className={`h-1.5 w-1.5 rounded-full ${
@@ -28,12 +29,21 @@ export function AtsBadge() {
           }`}
           aria-hidden
         />
-        ATS {result.ok ? "OK" : `${failed.length} issue${failed.length === 1 ? "" : "s"}`}
-      </span>
-      {!result.ok && (
-        <ul className="pointer-events-none absolute right-0 z-20 mt-1 hidden min-w-[12rem] rounded-lg border border-slate-600 bg-slate-900 p-2 text-xs text-slate-300 shadow-xl group-hover:block">
+        ATS{" "}
+        {result.ok
+          ? "OK"
+          : `${failed.length} issue${failed.length === 1 ? "" : "s"}`}
+      </button>
+      {open && (
+        <ul
+          id="ats-check-details"
+          className="absolute right-0 z-20 mt-1 min-w-[12rem] rounded-lg border border-slate-600 bg-slate-900 p-2 text-xs text-slate-300 shadow-xl"
+        >
           {result.checks.map((c) => (
-            <li key={c.id} className={c.pass ? "text-emerald-400" : "text-red-300"}>
+            <li
+              key={c.id}
+              className={c.pass ? "text-emerald-400" : "text-red-300"}
+            >
               {c.pass ? "✓" : "✗"} {c.label}
             </li>
           ))}

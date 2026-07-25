@@ -31,14 +31,25 @@ function resolvePersona(): PersonaId | null {
 }
 
 export function EditorShell() {
-  const { loadPersona } = useResume();
+  const { loadPersona, reset } = useResume();
   const router = useRouter();
 
   useEffect(() => {
-    const id = resolvePersona();
-    if (!id) return;
-    // Run after ResumeProvider localStorage hydration so persona wins.
+    // Run after ResumeProvider localStorage hydration.
     const t = window.setTimeout(() => {
+      try {
+        if (sessionStorage.getItem("ats-resume-blank") === "1") {
+          sessionStorage.removeItem("ats-resume-blank");
+          reset();
+          router.replace("/editor");
+          return;
+        }
+      } catch {
+        // ignore
+      }
+
+      const id = resolvePersona();
+      if (!id) return;
       loadPersona(id);
       try {
         sessionStorage.removeItem(PERSONA_KEY);
@@ -49,7 +60,7 @@ export function EditorShell() {
       router.replace("/editor");
     }, 0);
     return () => window.clearTimeout(t);
-  }, [loadPersona, router]);
+  }, [loadPersona, reset, router]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">

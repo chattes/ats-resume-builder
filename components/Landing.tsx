@@ -13,6 +13,7 @@ export function Landing() {
   function start(persona?: PersonaId) {
     if (persona) {
       try {
+        sessionStorage.removeItem("ats-resume-blank");
         sessionStorage.setItem(PERSONA_KEY, persona);
       } catch {
         // ignore
@@ -21,6 +22,7 @@ export function Landing() {
     } else {
       try {
         sessionStorage.removeItem(PERSONA_KEY);
+        sessionStorage.setItem("ats-resume-blank", "1");
       } catch {
         // ignore
       }
