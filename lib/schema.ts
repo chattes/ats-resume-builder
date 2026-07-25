@@ -14,7 +14,12 @@ export const TEMPLATE_IDS = [
 ] as const;
 
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
-export type PersonaId = "tech" | "healthcare" | "finance" | "education";
+export type PersonaId =
+  | "tech"
+  | "healthcare"
+  | "finance"
+  | "education"
+  | "trades";
 export type PageSize = "Letter" | "A4";
 export type SafeFont =
   | "Calibri"
@@ -98,7 +103,7 @@ export const resumeSchema = z.object({
     accentHex: z.string(),
     pageSize: z.enum(["Letter", "A4"]),
     persona: z
-      .enum(["tech", "healthcare", "finance", "education"])
+      .enum(["tech", "healthcare", "finance", "education", "trades"])
       .optional(),
   }),
 });

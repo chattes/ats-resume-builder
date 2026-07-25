@@ -29,25 +29,31 @@ export function AtsBadge() {
           }`}
           aria-hidden
         />
-        ATS{" "}
+        Ready{" "}
         {result.ok
           ? "OK"
           : `${failed.length} issue${failed.length === 1 ? "" : "s"}`}
       </button>
       {open && (
-        <ul
+        <div
           id="ats-check-details"
-          className="absolute right-0 z-20 mt-1 min-w-[12rem] rounded-lg border border-slate-600 bg-slate-900 p-2 text-xs text-slate-300 shadow-xl"
+          className="absolute right-0 z-20 mt-1 min-w-[14rem] rounded-lg border border-slate-600 bg-slate-900 p-2 text-xs text-slate-300 shadow-xl"
         >
-          {result.checks.map((c) => (
-            <li
-              key={c.id}
-              className={c.pass ? "text-emerald-400" : "text-red-300"}
-            >
-              {c.pass ? "✓" : "✗"} {c.label}
-            </li>
-          ))}
-        </ul>
+          <p className="mb-1.5 border-b border-slate-700 pb-1 text-[10px] leading-snug text-slate-500">
+            Completeness check. Structural ATS safety is guaranteed by DOCX
+            export + golden tests.
+          </p>
+          <ul>
+            {result.checks.map((c) => (
+              <li
+                key={c.id}
+                className={c.pass ? "text-emerald-400" : "text-red-300"}
+              >
+                {c.pass ? "✓" : "✗"} {c.label}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import type { PersonaId } from "@/lib/schema";
+import { PERSONA_IDS } from "@/lib/sections";
 import { useResume } from "@/lib/store";
 import { FormAccordion } from "./FormAccordion";
 import { KeywordPanel } from "./KeywordPanel";
@@ -10,20 +11,15 @@ import { PreviewPane } from "./PreviewPane";
 import { Toolbar } from "./Toolbar";
 
 const PERSONA_KEY = "ats-resume-persona";
-const PERSONA_IDS = new Set<PersonaId>([
-  "tech",
-  "healthcare",
-  "finance",
-  "education",
-]);
+const PERSONA_ID_SET = new Set<string>(PERSONA_IDS);
 
 function resolvePersona(): PersonaId | null {
   if (typeof window === "undefined") return null;
   try {
     const q = new URLSearchParams(window.location.search).get("persona");
-    if (q && PERSONA_IDS.has(q as PersonaId)) return q as PersonaId;
+    if (q && PERSONA_ID_SET.has(q)) return q as PersonaId;
     const s = sessionStorage.getItem(PERSONA_KEY);
-    if (s && PERSONA_IDS.has(s as PersonaId)) return s as PersonaId;
+    if (s && PERSONA_ID_SET.has(s)) return s as PersonaId;
   } catch {
     // ignore
   }

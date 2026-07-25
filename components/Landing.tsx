@@ -55,7 +55,7 @@ export function Landing() {
       <h2 className="mt-16 text-center text-lg font-semibold text-slate-200">
         Or start from a persona
       </h2>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {personas.map((p) => (
           <button
             key={p.id}

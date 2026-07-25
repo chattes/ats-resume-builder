@@ -1,5 +1,9 @@
 import type { Resume } from "@/lib/schema";
-import { SECTION_HEADINGS } from "@/lib/schema";
+import {
+  getContentSectionOrder,
+  sectionHeadingLabel,
+  type ContentSection,
+} from "@/lib/sections";
 import { getTemplate } from "@/lib/templates";
 import type { HeadingStyle, Template } from "@/lib/templates/types";
 
@@ -110,6 +114,187 @@ function bulletList(
   return `<ul style="list-style:none;padding:0;margin:0 0 0 18pt;">${lis}</ul>`;
 }
 
+/** Single-line role/date — no flex — so plain-text extract keeps reading order. */
+function roleDateLine(
+  title: string,
+  dates: string,
+  template: Template,
+  spacing: { paraAfter: string },
+  dateAccent?: string
+): string {
+  const dateStyle = dateAccent ? `color:${dateAccent};` : "color:#111;";
+  return (
+    `<p style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 calc(${spacing.paraAfter} / 2);color:#111;">` +
+    `<strong>${escapeHtml(title)}</strong>` +
+    `<span style="${dateStyle}"> — ${escapeHtml(dates)}</span>` +
+    `</p>`
+  );
+}
+
+type HtmlSectionCtx = {
+  resume: Resume;
+  template: Template;
+  spacing: { sectionAfter: string; paraAfter: string };
+  dateAccent: string | undefined;
+  persona: Resume["meta"]["persona"];
+};
+
+function buildHtmlSection(key: ContentSection, ctx: HtmlSectionCtx): string[] {
+  const { resume, template, spacing, dateAccent, persona } = ctx;
+  const parts: string[] = [];
+
+  switch (key) {
+    case "summary": {
+      if (!resume.summary.trim()) return parts;
+      parts.push(
+        sectionHeadingHtml(
+          sectionHeadingLabel("summary", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      parts.push(
+        `<p style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 ${spacing.sectionAfter};color:#111;">${escapeHtml(resume.summary)}</p>`
+      );
+      return parts;
+    }
+    case "skills": {
+      if (resume.skills.length === 0) return parts;
+      parts.push(
+        sectionHeadingHtml(
+          sectionHeadingLabel("skills", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      parts.push(
+        `<p style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 ${spacing.sectionAfter};color:#111;">${escapeHtml(resume.skills.join(", "))}</p>`
+      );
+      return parts;
+    }
+    case "experience": {
+      if (resume.experience.length === 0) return parts;
+      parts.push(
+        sectionHeadingHtml(
+          sectionHeadingLabel("experience", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      for (const job of resume.experience) {
+        parts.push(
+          roleDateLine(
+            job.role,
+            dateRange(job.start, job.end),
+            template,
+            spacing,
+            dateAccent
+          )
+        );
+        const companyLine = [job.company, job.location]
+          .filter(Boolean)
+          .join(" — ");
+        parts.push(
+          `<div style="font-family:${template.font.body},sans-serif;font-size:10pt;font-weight:bold;margin:0 0 calc(${spacing.paraAfter} / 2);color:#111;">${escapeHtml(companyLine)}</div>`
+        );
+        parts.push(bulletList(job.bullets, template, spacing));
+      }
+      return parts;
+    }
+    case "education": {
+      if (resume.education.length === 0) return parts;
+      parts.push(
+        sectionHeadingHtml(
+          sectionHeadingLabel("education", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      for (const edu of resume.education) {
+        parts.push(
+          roleDateLine(
+            edu.degree,
+            dateRange(edu.start, edu.end),
+            template,
+            spacing,
+            dateAccent
+          )
+        );
+        const schoolLine = [edu.school, edu.location]
+          .filter(Boolean)
+          .join(" — ");
+        parts.push(
+          `<div style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 ${spacing.paraAfter};color:#111;">${escapeHtml(schoolLine)}</div>`
+        );
+        if (edu.details?.length) {
+          parts.push(bulletList(edu.details, template, spacing));
+        }
+      }
+      return parts;
+    }
+    case "certifications": {
+      if (!resume.certifications?.length) return parts;
+      parts.push(
+        sectionHeadingHtml(
+          sectionHeadingLabel("certifications", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      for (const cert of resume.certifications) {
+        const line = [cert.name, cert.issuer, cert.year]
+          .filter(Boolean)
+          .join(" — ");
+        parts.push(
+          `<div style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 ${spacing.paraAfter};color:#111;">${escapeHtml(line)}</div>`
+        );
+      }
+      return parts;
+    }
+    case "projects": {
+      if (!resume.projects?.length) return parts;
+      parts.push(
+        sectionHeadingHtml(
+          sectionHeadingLabel("projects", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      for (const project of resume.projects) {
+        parts.push(
+          `<div style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 calc(${spacing.paraAfter} / 2);color:#111;">` +
+            `<strong>${escapeHtml(project.name)}</strong> — ${escapeHtml(project.description)}` +
+            `</div>`
+        );
+        if (project.bullets?.length) {
+          parts.push(bulletList(project.bullets, template, spacing));
+        }
+      }
+      return parts;
+    }
+    case "customSections": {
+      for (const section of resume.customSections ?? []) {
+        parts.push(
+          sectionHeadingHtml(
+            section.heading,
+            template,
+            resume.meta.accentHex,
+            spacing
+          )
+        );
+        parts.push(bulletList(section.items, template, spacing));
+      }
+      return parts;
+    }
+  }
+}
+
 export function resumeToHtml(resume: Resume): string {
   const template = getTemplate(resume.meta.template);
   const spacing = DENSITY_SPACING[template.density];
@@ -170,138 +355,16 @@ export function resumeToHtml(resume: Resume): string {
     );
   }
 
-  if (resume.summary.trim()) {
+  for (const key of getContentSectionOrder(resume.meta.persona)) {
     parts.push(
-      sectionHeadingHtml(
-        SECTION_HEADINGS.summary,
+      ...buildHtmlSection(key, {
+        resume,
         template,
-        resume.meta.accentHex,
-        spacing
-      )
+        spacing,
+        dateAccent,
+        persona: resume.meta.persona,
+      })
     );
-    parts.push(
-      `<p style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 ${spacing.sectionAfter};color:#111;">${escapeHtml(resume.summary)}</p>`
-    );
-  }
-
-  if (resume.skills.length > 0) {
-    parts.push(
-      sectionHeadingHtml(
-        SECTION_HEADINGS.skills,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    parts.push(
-      `<p style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 ${spacing.sectionAfter};color:#111;">${escapeHtml(resume.skills.join(", "))}</p>`
-    );
-  }
-
-  if (resume.experience.length > 0) {
-    parts.push(
-      sectionHeadingHtml(
-        SECTION_HEADINGS.experience,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    for (const job of resume.experience) {
-      const dates = dateRange(job.start, job.end);
-      const dateColor = dateAccent ? `color:${dateAccent};` : "color:#111;";
-      parts.push(
-        `<div style="display:flex;justify-content:space-between;gap:12pt;margin:0 0 calc(${spacing.paraAfter} / 2);font-family:${template.font.body},sans-serif;font-size:10pt;">` +
-          `<span style="font-weight:bold;color:#111;">${escapeHtml(job.role)}</span>` +
-          `<span style="${dateColor}white-space:nowrap;">${escapeHtml(dates)}</span>` +
-          `</div>`
-      );
-      const companyLine = [job.company, job.location].filter(Boolean).join(" — ");
-      parts.push(
-        `<div style="font-family:${template.font.body},sans-serif;font-size:10pt;font-weight:bold;margin:0 0 calc(${spacing.paraAfter} / 2);color:#111;">${escapeHtml(companyLine)}</div>`
-      );
-      parts.push(bulletList(job.bullets, template, spacing));
-    }
-  }
-
-  if (resume.education.length > 0) {
-    parts.push(
-      sectionHeadingHtml(
-        SECTION_HEADINGS.education,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    for (const edu of resume.education) {
-      const dates = dateRange(edu.start, edu.end);
-      const dateColor = dateAccent ? `color:${dateAccent};` : "color:#111;";
-      parts.push(
-        `<div style="display:flex;justify-content:space-between;gap:12pt;margin:0 0 calc(${spacing.paraAfter} / 2);font-family:${template.font.body},sans-serif;font-size:10pt;">` +
-          `<span style="font-weight:bold;color:#111;">${escapeHtml(edu.degree)}</span>` +
-          `<span style="${dateColor}white-space:nowrap;">${escapeHtml(dates)}</span>` +
-          `</div>`
-      );
-      const schoolLine = [edu.school, edu.location].filter(Boolean).join(" — ");
-      parts.push(
-        `<div style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 ${spacing.paraAfter};color:#111;">${escapeHtml(schoolLine)}</div>`
-      );
-      if (edu.details?.length) {
-        parts.push(bulletList(edu.details, template, spacing));
-      }
-    }
-  }
-
-  if (resume.certifications && resume.certifications.length > 0) {
-    parts.push(
-      sectionHeadingHtml(
-        SECTION_HEADINGS.certifications,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    for (const cert of resume.certifications) {
-      const line = [cert.name, cert.issuer, cert.year].filter(Boolean).join(" — ");
-      parts.push(
-        `<div style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 ${spacing.paraAfter};color:#111;">${escapeHtml(line)}</div>`
-      );
-    }
-  }
-
-  if (resume.projects && resume.projects.length > 0) {
-    parts.push(
-      sectionHeadingHtml(
-        SECTION_HEADINGS.projects,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    for (const project of resume.projects) {
-      parts.push(
-        `<div style="font-family:${template.font.body},sans-serif;font-size:10pt;margin:0 0 calc(${spacing.paraAfter} / 2);color:#111;">` +
-          `<strong>${escapeHtml(project.name)}</strong> — ${escapeHtml(project.description)}` +
-          `</div>`
-      );
-      if (project.bullets?.length) {
-        parts.push(bulletList(project.bullets, template, spacing));
-      }
-    }
-  }
-
-  if (resume.customSections) {
-    for (const section of resume.customSections) {
-      parts.push(
-        sectionHeadingHtml(
-          section.heading,
-          template,
-          resume.meta.accentHex,
-          spacing
-        )
-      );
-      parts.push(bulletList(section.items, template, spacing));
-    }
   }
 
   const rootStyle = [

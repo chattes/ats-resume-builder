@@ -5,6 +5,7 @@ import { getTemplate } from "@/lib/templates";
 
 export type AtsCheckResult = {
   ok: boolean;
+  /** Completeness / readiness — structural ATS safety is enforced by the generator + golden tests. */
   checks: { id: string; label: string; pass: boolean }[];
 };
 
@@ -24,8 +25,8 @@ export function atsCheck(resume: Resume): AtsCheckResult {
         resume.contact.phone.trim().length > 0,
     },
     {
-      id: "single-column",
-      label: "Single-column layout",
+      id: "layout-guaranteed",
+      label: "Single-column layout (export guaranteed)",
       pass: true,
     },
     {
@@ -44,8 +45,8 @@ export function atsCheck(resume: Resume): AtsCheckResult {
       pass: resume.experience.length > 0 || resume.education.length > 0,
     },
     {
-      id: "standard-headings",
-      label: "Standard section headings",
+      id: "headings-guaranteed",
+      label: "Standard section headings (export guaranteed)",
       pass: true,
     },
     {

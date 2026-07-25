@@ -10,7 +10,11 @@ import {
   type IBorderOptions,
 } from "docx";
 import type { Resume } from "@/lib/schema";
-import { SECTION_HEADINGS } from "@/lib/schema";
+import {
+  getContentSectionOrder,
+  sectionHeadingLabel,
+  type ContentSection,
+} from "@/lib/sections";
 import { getTemplate } from "@/lib/templates";
 import type { HeadingStyle, Template } from "@/lib/templates/types";
 
@@ -183,6 +187,222 @@ function contactLine(resume: Resume): string {
   return parts.join(" | ");
 }
 
+type DocxSectionCtx = {
+  resume: Resume;
+  template: Template;
+  spacing: { sectionAfter: number; paraAfter: number };
+  rightTab: number;
+  dateAccent: string | undefined;
+  persona: Resume["meta"]["persona"];
+};
+
+function buildDocxSection(key: ContentSection, ctx: DocxSectionCtx): Paragraph[] {
+  const { resume, template, spacing, rightTab, dateAccent, persona } = ctx;
+  const out: Paragraph[] = [];
+
+  switch (key) {
+    case "summary": {
+      if (!resume.summary.trim()) return out;
+      out.push(
+        sectionHeading(
+          sectionHeadingLabel("summary", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      out.push(
+        new Paragraph({
+          spacing: { after: spacing.sectionAfter },
+          children: [bodyRun(resume.summary, template)],
+        })
+      );
+      return out;
+    }
+    case "skills": {
+      if (resume.skills.length === 0) return out;
+      out.push(
+        sectionHeading(
+          sectionHeadingLabel("skills", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      out.push(
+        new Paragraph({
+          spacing: { after: spacing.sectionAfter },
+          children: [bodyRun(resume.skills.join(", "), template)],
+        })
+      );
+      return out;
+    }
+    case "experience": {
+      if (resume.experience.length === 0) return out;
+      out.push(
+        sectionHeading(
+          sectionHeadingLabel("experience", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      for (const job of resume.experience) {
+        const dates = dateRange(job.start, job.end);
+        out.push(
+          new Paragraph({
+            spacing: { after: spacing.paraAfter / 2 },
+            tabStops: [{ type: TabStopType.RIGHT, position: rightTab }],
+            children: [
+              bodyRun(job.role, template, { bold: true }),
+              bodyRun("\t", template),
+              bodyRun(dates, template, { color: dateAccent }),
+            ],
+          })
+        );
+        const companyLine = [job.company, job.location]
+          .filter(Boolean)
+          .join(" — ");
+        out.push(
+          new Paragraph({
+            spacing: { after: spacing.paraAfter / 2 },
+            children: [bodyRun(companyLine, template, { bold: true })],
+          })
+        );
+        for (const bullet of job.bullets) {
+          out.push(
+            new Paragraph({
+              spacing: { after: spacing.paraAfter / 2 },
+              numbering: { reference: BULLET_REF, level: 0 },
+              children: [bodyRun(bullet, template)],
+            })
+          );
+        }
+      }
+      return out;
+    }
+    case "education": {
+      if (resume.education.length === 0) return out;
+      out.push(
+        sectionHeading(
+          sectionHeadingLabel("education", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      for (const edu of resume.education) {
+        const dates = dateRange(edu.start, edu.end);
+        out.push(
+          new Paragraph({
+            spacing: { after: spacing.paraAfter / 2 },
+            tabStops: [{ type: TabStopType.RIGHT, position: rightTab }],
+            children: [
+              bodyRun(edu.degree, template, { bold: true }),
+              bodyRun("\t", template),
+              bodyRun(dates, template, { color: dateAccent }),
+            ],
+          })
+        );
+        const schoolLine = [edu.school, edu.location]
+          .filter(Boolean)
+          .join(" — ");
+        out.push(
+          new Paragraph({
+            spacing: { after: spacing.paraAfter },
+            children: [bodyRun(schoolLine, template)],
+          })
+        );
+        for (const detail of edu.details ?? []) {
+          out.push(
+            new Paragraph({
+              spacing: { after: spacing.paraAfter / 2 },
+              numbering: { reference: BULLET_REF, level: 0 },
+              children: [bodyRun(detail, template)],
+            })
+          );
+        }
+      }
+      return out;
+    }
+    case "certifications": {
+      if (!resume.certifications?.length) return out;
+      out.push(
+        sectionHeading(
+          sectionHeadingLabel("certifications", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      for (const cert of resume.certifications) {
+        const parts = [cert.name, cert.issuer, cert.year].filter(Boolean);
+        out.push(
+          new Paragraph({
+            spacing: { after: spacing.paraAfter },
+            children: [bodyRun(parts.join(" — "), template)],
+          })
+        );
+      }
+      return out;
+    }
+    case "projects": {
+      if (!resume.projects?.length) return out;
+      out.push(
+        sectionHeading(
+          sectionHeadingLabel("projects", persona),
+          template,
+          resume.meta.accentHex,
+          spacing
+        )
+      );
+      for (const project of resume.projects) {
+        out.push(
+          new Paragraph({
+            spacing: { after: spacing.paraAfter / 2 },
+            children: [
+              bodyRun(project.name, template, { bold: true }),
+              bodyRun(` — ${project.description}`, template),
+            ],
+          })
+        );
+        for (const bullet of project.bullets ?? []) {
+          out.push(
+            new Paragraph({
+              spacing: { after: spacing.paraAfter / 2 },
+              numbering: { reference: BULLET_REF, level: 0 },
+              children: [bodyRun(bullet, template)],
+            })
+          );
+        }
+      }
+      return out;
+    }
+    case "customSections": {
+      for (const section of resume.customSections ?? []) {
+        out.push(
+          sectionHeading(
+            section.heading,
+            template,
+            resume.meta.accentHex,
+            spacing
+          )
+        );
+        for (const item of section.items) {
+          out.push(
+            new Paragraph({
+              spacing: { after: spacing.paraAfter / 2 },
+              numbering: { reference: BULLET_REF, level: 0 },
+              children: [bodyRun(item, template)],
+            })
+          );
+        }
+      }
+      return out;
+    }
+  }
+}
+
 export function resumeToDocxDocument(resume: Resume): Document {
   const template = getTemplate(resume.meta.template);
   const spacing = DENSITY_SPACING[template.density];
@@ -252,188 +472,17 @@ export function resumeToDocxDocument(resume: Resume): Document {
   const divider = dividerParagraph(template, resume.meta.accentHex, spacing);
   if (divider) children.push(divider);
 
-  if (resume.summary.trim()) {
-    children.push(
-      sectionHeading(
-        SECTION_HEADINGS.summary,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    children.push(
-      new Paragraph({
-        spacing: { after: spacing.sectionAfter },
-        children: [bodyRun(resume.summary, template)],
-      })
-    );
-  }
+  const ctx = {
+    resume,
+    template,
+    spacing,
+    rightTab,
+    dateAccent,
+    persona: resume.meta.persona,
+  };
 
-  if (resume.skills.length > 0) {
-    children.push(
-      sectionHeading(
-        SECTION_HEADINGS.skills,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    children.push(
-      new Paragraph({
-        spacing: { after: spacing.sectionAfter },
-        children: [bodyRun(resume.skills.join(", "), template)],
-      })
-    );
-  }
-
-  if (resume.experience.length > 0) {
-    children.push(
-      sectionHeading(
-        SECTION_HEADINGS.experience,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    for (const job of resume.experience) {
-      const dates = dateRange(job.start, job.end);
-      children.push(
-        new Paragraph({
-          spacing: { after: spacing.paraAfter / 2 },
-          tabStops: [{ type: TabStopType.RIGHT, position: rightTab }],
-          children: [
-            bodyRun(job.role, template, { bold: true }),
-            bodyRun("\t", template),
-            bodyRun(dates, template, { color: dateAccent }),
-          ],
-        })
-      );
-      const companyLine = [job.company, job.location].filter(Boolean).join(" — ");
-      children.push(
-        new Paragraph({
-          spacing: { after: spacing.paraAfter / 2 },
-          children: [bodyRun(companyLine, template, { bold: true })],
-        })
-      );
-      for (const bullet of job.bullets) {
-        children.push(
-          new Paragraph({
-            spacing: { after: spacing.paraAfter / 2 },
-            numbering: { reference: BULLET_REF, level: 0 },
-            children: [bodyRun(bullet, template)],
-          })
-        );
-      }
-    }
-  }
-
-  if (resume.education.length > 0) {
-    children.push(
-      sectionHeading(
-        SECTION_HEADINGS.education,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    for (const edu of resume.education) {
-      const dates = dateRange(edu.start, edu.end);
-      children.push(
-        new Paragraph({
-          spacing: { after: spacing.paraAfter / 2 },
-          tabStops: [{ type: TabStopType.RIGHT, position: rightTab }],
-          children: [
-            bodyRun(edu.degree, template, { bold: true }),
-            bodyRun("\t", template),
-            bodyRun(dates, template, { color: dateAccent }),
-          ],
-        })
-      );
-      const schoolLine = [edu.school, edu.location].filter(Boolean).join(" — ");
-      children.push(
-        new Paragraph({
-          spacing: { after: spacing.paraAfter },
-          children: [bodyRun(schoolLine, template)],
-        })
-      );
-      for (const detail of edu.details ?? []) {
-        children.push(
-          new Paragraph({
-            spacing: { after: spacing.paraAfter / 2 },
-            numbering: { reference: BULLET_REF, level: 0 },
-            children: [bodyRun(detail, template)],
-          })
-        );
-      }
-    }
-  }
-
-  if (resume.certifications && resume.certifications.length > 0) {
-    children.push(
-      sectionHeading(
-        SECTION_HEADINGS.certifications,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    for (const cert of resume.certifications) {
-      const parts = [cert.name, cert.issuer, cert.year].filter(Boolean);
-      children.push(
-        new Paragraph({
-          spacing: { after: spacing.paraAfter },
-          children: [bodyRun(parts.join(" — "), template)],
-        })
-      );
-    }
-  }
-
-  if (resume.projects && resume.projects.length > 0) {
-    children.push(
-      sectionHeading(
-        SECTION_HEADINGS.projects,
-        template,
-        resume.meta.accentHex,
-        spacing
-      )
-    );
-    for (const project of resume.projects) {
-      children.push(
-        new Paragraph({
-          spacing: { after: spacing.paraAfter / 2 },
-          children: [
-            bodyRun(project.name, template, { bold: true }),
-            bodyRun(` — ${project.description}`, template),
-          ],
-        })
-      );
-      for (const bullet of project.bullets ?? []) {
-        children.push(
-          new Paragraph({
-            spacing: { after: spacing.paraAfter / 2 },
-            numbering: { reference: BULLET_REF, level: 0 },
-            children: [bodyRun(bullet, template)],
-          })
-        );
-      }
-    }
-  }
-
-  if (resume.customSections) {
-    for (const section of resume.customSections) {
-      children.push(
-        sectionHeading(section.heading, template, resume.meta.accentHex, spacing)
-      );
-      for (const item of section.items) {
-        children.push(
-          new Paragraph({
-            spacing: { after: spacing.paraAfter / 2 },
-            numbering: { reference: BULLET_REF, level: 0 },
-            children: [bodyRun(item, template)],
-          })
-        );
-      }
-    }
+  for (const key of getContentSectionOrder(resume.meta.persona)) {
+    children.push(...buildDocxSection(key, ctx));
   }
 
   return new Document({

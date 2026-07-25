@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { SECTION_HEADINGS } from "@/lib/schema";
+import { useMemo, useState, type ReactNode } from "react";
+import { getContentSectionOrder, sectionHeadingLabel } from "@/lib/sections";
+import { useResume } from "@/lib/store";
 import { CertificationsForm } from "./sections/CertificationsForm";
 import { ContactForm } from "./sections/ContactForm";
 import { EducationForm } from "./sections/EducationForm";
@@ -16,40 +17,59 @@ type Section = {
   content: ReactNode;
 };
 
-const SECTIONS: Section[] = [
-  { id: "contact", title: "Contact", content: <ContactForm /> },
-  {
-    id: "summary",
-    title: SECTION_HEADINGS.summary,
-    content: <SummaryForm />,
-  },
-  { id: "skills", title: SECTION_HEADINGS.skills, content: <SkillsForm /> },
-  {
-    id: "experience",
-    title: SECTION_HEADINGS.experience,
-    content: <ExperienceForm />,
-  },
-  {
-    id: "education",
-    title: SECTION_HEADINGS.education,
-    content: <EducationForm />,
-  },
-  {
-    id: "certifications",
-    title: SECTION_HEADINGS.certifications,
-    content: <CertificationsForm />,
-  },
-  {
-    id: "projects",
-    title: SECTION_HEADINGS.projects,
-    content: <ProjectsForm />,
-  },
-];
-
 export function FormAccordion() {
+  const { resume } = useResume();
+  const persona = resume.meta.persona;
+
+  const sections: Section[] = useMemo(() => {
+    const contentForms: Record<string, Section> = {
+      summary: {
+        id: "summary",
+        title: sectionHeadingLabel("summary", persona),
+        content: <SummaryForm />,
+      },
+      skills: {
+        id: "skills",
+        title: sectionHeadingLabel("skills", persona),
+        content: <SkillsForm />,
+      },
+      experience: {
+        id: "experience",
+        title: sectionHeadingLabel("experience", persona),
+        content: <ExperienceForm />,
+      },
+      education: {
+        id: "education",
+        title: sectionHeadingLabel("education", persona),
+        content: <EducationForm />,
+      },
+      certifications: {
+        id: "certifications",
+        title: sectionHeadingLabel("certifications", persona),
+        content: <CertificationsForm />,
+      },
+      projects: {
+        id: "projects",
+        title: sectionHeadingLabel("projects", persona),
+        content: <ProjectsForm />,
+      },
+    };
+
+    const ordered = getContentSectionOrder(persona)
+      .filter((k) => k !== "customSections")
+      .map((k) => contentForms[k])
+      .filter(Boolean);
+
+    return [
+      { id: "contact", title: "Contact", content: <ContactForm /> },
+      ...ordered,
+    ];
+  }, [persona]);
+
   const [open, setOpen] = useState<Record<string, boolean>>({
     contact: true,
     summary: true,
+    certifications: persona === "trades",
   });
 
   function toggle(id: string) {
@@ -58,7 +78,7 @@ export function FormAccordion() {
 
   return (
     <div className="divide-y divide-slate-700">
-      {SECTIONS.map((s) => {
+      {sections.map((s) => {
         const isOpen = !!open[s.id];
         return (
           <div key={s.id}>

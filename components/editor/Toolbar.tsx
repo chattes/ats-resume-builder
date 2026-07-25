@@ -163,10 +163,14 @@ export function Toolbar() {
         <button
           type="button"
           onClick={handlePrint}
+          title="For online applications, submit the DOCX — it's the ATS-verified format."
           className="rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
         >
           Print / PDF
         </button>
+        <span className="hidden text-[10px] leading-tight text-slate-500 sm:inline max-w-[11rem]">
+          Online apps: prefer DOCX (ATS-verified)
+        </span>
         <button
           type="button"
           onClick={handleExport}
