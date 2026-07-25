@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useState,
   type Dispatch,
   type ReactNode,
 } from "react";
@@ -209,15 +210,22 @@ type ResumeContextValue = {
 const ResumeContext = createContext<ResumeContextValue | null>(null);
 
 export function ResumeProvider({ children }: { children: ReactNode }) {
-  const [resume, dispatch] = useReducer(resumeReducer, undefined, loadResume);
+  const [resume, dispatch] = useReducer(resumeReducer, undefined, emptyResume);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    dispatch({ type: "REPLACE", payload: loadResume() });
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(resume));
     } catch {
       // ignore quota / private mode errors
     }
-  }, [resume]);
+  }, [resume, hydrated]);
 
   const loadPersona = useCallback((id: PersonaId) => {
     dispatch({ type: "REPLACE", payload: getPersona(id) });
