@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/site/PageShell";
-import { SITE } from "@/lib/seo/site";
+import { SITE, pageMetadata } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Why an ATS Résumé Matters (and How to Pass) — 2026 Guide",
   description:
     "What an ATS is, why most résumé templates fail it, and the formatting rules that get your résumé parsed correctly in 2026. Then build one free.",
+  path: "/why-ats-resume",
   keywords: [
     "why ats resume",
     "what is an ats",
@@ -14,8 +14,7 @@ export const metadata: Metadata = {
     "how to pass ats",
     "ats resume rules 2026",
   ],
-  alternates: { canonical: "/why-ats-resume" },
-};
+});
 
 const faqs = [
   {

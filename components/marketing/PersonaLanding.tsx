@@ -75,6 +75,34 @@ export function PersonaLanding({ slug }: { slug: string }) {
         </div>
 
         <div className="mt-16">
+          <h2 className="text-xl font-semibold text-slate-100">
+            Example bullet points
+          </h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Strong résumé bullets lead with a result and a number. Here are examples you can adapt:
+          </p>
+          <ul className="mt-4 space-y-3">
+            {page.sampleBullets.map((b) => (
+              <li key={b} className="rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300">
+                {b}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-16">
+          <h2 className="text-xl font-semibold text-slate-100">Questions</h2>
+          <div className="mt-4 space-y-6">
+            {page.faqs.map((f) => (
+              <div key={f.q}>
+                <h3 className="font-semibold text-slate-100">{f.q}</h3>
+                <p className="mt-1 text-sm text-slate-300">{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-16">
           <h2 className="text-lg font-semibold text-slate-200">Other free résumé builders</h2>
           <div className="mt-4 flex flex-wrap gap-3">
             {others.map((o) => (

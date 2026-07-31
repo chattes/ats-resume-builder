@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/site/PageShell";
 import { PdfToResume } from "@/components/tools/PdfToResume";
+import { pageMetadata } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "LinkedIn to Résumé — Free PDF → ATS-Friendly Résumé",
   description:
     "Turn your LinkedIn profile PDF (or any résumé PDF) into a clean, ATS-friendly résumé you can edit and export as .docx or PDF. Free, in-browser, no sign-up.",
+  path: "/linkedin-to-resume",
   keywords: [
     "linkedin to resume",
     "linkedin pdf to resume",
@@ -14,14 +15,7 @@ export const metadata: Metadata = {
     "convert linkedin to resume",
     "resume from linkedin free",
   ],
-  alternates: { canonical: "/linkedin-to-resume" },
-  openGraph: {
-    title: "LinkedIn to Résumé — Free PDF → ATS-Friendly Résumé",
-    description:
-      "Convert your LinkedIn PDF into an editable, ATS-safe résumé. Free and in-browser.",
-    url: "/linkedin-to-resume",
-  },
-};
+});
 
 export default function Page() {
   const jsonLd = {

@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/site/PageShell";
 import { AtsChecker } from "@/components/tools/AtsChecker";
+import { pageMetadata } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Free ATS Résumé Checker — Test Your Résumé Instantly",
   description:
     "Paste or upload your résumé and get an instant ATS-readiness check: contact details, standard sections, length and formatting. Free, in-browser, no sign-up.",
+  path: "/ats-resume-checker",
   keywords: [
     "ats resume checker",
     "resume ats checker free",
@@ -14,13 +15,7 @@ export const metadata: Metadata = {
     "check resume ats",
     "ats resume test",
   ],
-  alternates: { canonical: "/ats-resume-checker" },
-  openGraph: {
-    title: "Free ATS Résumé Checker — Test Your Résumé Instantly",
-    description: "Instant ATS-readiness check. Free and in-browser.",
-    url: "/ats-resume-checker",
-  },
-};
+});
 
 export default function Page() {
   return (

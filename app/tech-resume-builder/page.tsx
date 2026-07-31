@@ -1,16 +1,14 @@
-import type { Metadata } from "next";
 import { PersonaLanding } from "@/components/marketing/PersonaLanding";
-import { getPersonaPage } from "@/lib/seo/site";
+import { getPersonaPage, pageMetadata } from "@/lib/seo/site";
 
 const page = getPersonaPage("tech-resume-builder")!;
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: page.metaTitle,
   description: page.metaDescription,
+  path: `/${page.slug}`,
   keywords: page.keywords,
-  alternates: { canonical: `/${page.slug}` },
-  openGraph: { title: page.metaTitle, description: page.metaDescription, url: `/${page.slug}` },
-};
+});
 
 export default function Page() {
   return <PersonaLanding slug="tech-resume-builder" />;

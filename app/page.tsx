@@ -1,13 +1,20 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/site/PageShell";
-import { PERSONA_PAGES, SITE } from "@/lib/seo/site";
+import { PERSONA_PAGES, SITE, pageMetadata } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Free ATS Resume Builder — Word & PDF, No Sign-Up",
   description: SITE.tagline,
-  alternates: { canonical: "/" },
-};
+  path: "/",
+  keywords: [
+    "ats resume builder",
+    "free resume builder",
+    "ats friendly resume",
+    "resume builder no sign up",
+    "ats resume checker",
+    "linkedin to resume",
+  ],
+});
 
 const trust = [
   "100% free",
